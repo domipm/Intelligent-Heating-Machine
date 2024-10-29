@@ -2,7 +2,9 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-file = open("1990.json")
+fname = "2050.json"
+
+file = open(fname)
 data = json.load(file)
 
 properties = ["Temperature Humidity", "Humidity"]
@@ -23,4 +25,5 @@ plt.xlabel(r"Time $t$ [min]")
 plt.ylabel("Value")
 
 plt.legend()
+plt.savefig(str( fname.split()[0] + ".png" ), dpi=300)
 plt.show()
