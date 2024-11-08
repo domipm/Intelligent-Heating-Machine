@@ -2,7 +2,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-fname = "2050.json"
+fname = "./data/2050.json"
 
 file = open(fname)
 data = json.load(file)
@@ -41,5 +41,5 @@ plt.ylabel("Value")
 
 plt.legend()
 
-plt.savefig(str( "./gph/" + fname.split(".")[0] + ".png" ), dpi=300)
+plt.savefig(str( "./graphs/" + fname.split(".")[0] + ".png" ), dpi=300)
 plt.show()
