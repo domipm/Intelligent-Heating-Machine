@@ -2,9 +2,10 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-fname = "./data/2050.json"
+fdir = "./data/"    # Directory where data file stored
+fname = "2050.json" # Name of the file to plot
 
-file = open(fname)
+file = open(fdir + fname)
 data = json.load(file)
 
 # Plot relevant properties
