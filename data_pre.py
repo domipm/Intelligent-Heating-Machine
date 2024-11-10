@@ -20,9 +20,9 @@ import matplotlib.pyplot as plt
 # Directory where measurements are
 m_dir = "./measurements/data/"
 # Directory where some sample data can be found
-s_dir = "./data_sample/data/"
+s_dir = "./sample_data/data/"
 # Directory where dataframes are to be saved
-d_dir = "./database/"
+d_dir = "./sample_data/database/"
 
 # Sorted array of all file names available in directory
 files = np.sort(os.listdir(s_dir))
