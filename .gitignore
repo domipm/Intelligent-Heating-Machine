@@ -164,8 +164,5 @@ cython_debug/
 # VsCode
 .DS_Store
 
-#MacOs
-Icon
-
 # Database
 /measurements/
