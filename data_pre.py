@@ -1,5 +1,14 @@
 # Script used for all pre-processing of the data
 
+'''
+
+TO-DO / IDEAS:
+
+    - Include current washing/drying phase for RNN to use
+    - Include time of drying ("program duration" in data files)
+
+'''
+
 import numpy as np
 import json
 import os
