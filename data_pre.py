@@ -6,7 +6,9 @@ TO-DO / IDEAS:
 
     - Include current washing/drying phase for RNN to use
     - Include time of drying ("program duration" in data files)
-
+    - Smooth graph out (interpolation/spline) to have continuous time steps
+      (equal time ticks for all parameters)
+    
 '''
 
 import numpy as np
