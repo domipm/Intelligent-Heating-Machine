@@ -58,4 +58,4 @@ for fname in fnames:
 
     plt.legend()
 
-    plt.savefig(str( "./graphs/" + fname.split(".")[0] + ".png" ), dpi=300)
+    plt.savefig(str( gdir + fname.split(".")[0] + ".png" ), dpi=300)
