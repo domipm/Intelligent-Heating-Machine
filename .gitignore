@@ -163,6 +163,7 @@ cython_debug/
 
 # VsCode
 .DS_Store
+tempCodeRunnerFile.py
 
 # Database
 /measurements/
