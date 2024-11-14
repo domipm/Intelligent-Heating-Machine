@@ -37,16 +37,21 @@ for k, file in enumerate(files):
     f = open(s_dir + file)
     data = json.load(f)
 
-    # Create relevant arrays
+    # Create relevant arrays (X_tick time of data, X_val value, Dry_tick time drying begins)
     T_tick = []
     T_val = []
     H_tick = []
     H_val = []
     TH_tick = []
     TH_val = []
+    Dry_tick = []
 
     # Read all the relevant data
     for line in data['Logs']:
+
+        if (line['name'] == "Phase type" and line['value'] == "Drying"):
+
+            Dry_tick.append(line['tick'])
 
         if (line['name'] == "Temperature Wash Tank"):
 
@@ -64,7 +69,7 @@ for k, file in enumerate(files):
             TH_val.append(float(line['value']))
 
     # Dictionary of lists
-    values = {'T_tick': T_tick, 'T_val': T_val, "H_tick": H_tick, "H_val": H_val, "TH_tick": TH_tick, "TH_val": TH_val}
+    values = {'T_tick': T_tick, 'T_val': T_val, "H_tick": H_tick, "H_val": H_val, "TH_tick": TH_tick, "TH_val": TH_val, "Dry_tick": Dry_tick}
     # Convert dictionary of lists into pandas dataframe (fill unequal lengths with NaN values)
     dataframe = pd.DataFrame({ key:pd.Series(value) for key, value in values.items() })
     
