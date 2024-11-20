@@ -13,6 +13,10 @@ gdir = "./graphs/savitzky-golay"
 # List of all files available
 fnames = []
 
+# Savitzky-Golay filter parameters
+window = 25
+order = 3
+
 # Colors for plots
 colors = ["tab:blue", "tab:blue", "tab:orange", "tab:orange", "tab:green", "tab:green"]
 
@@ -42,7 +46,7 @@ for fname in fnames:
         plt.plot(np.asarray(tick, float), np.asarray(prop, float), linestyle="-", linewidth=1, marker=".", markersize=2, label=str(property), alpha=0.25, color=colors[k])
 
         # Smooth data and plot smoothed-out curve
-        y_filter = savgol_filter(x=prop, window_length=50, polyorder=3)
+        y_filter = savgol_filter(x=prop, window_length=window, polyorder=order)
         plt.plot(np.asarray(tick, float), np.asarray(y_filter, float), linestyle="-", marker='', label=property + " fit", color=colors[k])
 
     # Plot relevant phases
