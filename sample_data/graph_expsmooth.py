@@ -65,7 +65,7 @@ for fname in fnames:
         plt.text(x=tick_phase[i]+0.05, y=-10+5*i, s=phase_type[i])
 
     # Show plot
-    plt.title("Temperature and humidity over time (Exponential smoothing)")
+    plt.title("Temperature and humidity over time (Exp smoothing)")
     plt.xlabel(r"Time $t$ [min]")
     plt.ylabel("Value")
     plt.legend(bbox_to_anchor=(1.015, 1.015))
