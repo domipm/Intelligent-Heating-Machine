@@ -37,39 +37,34 @@ for k, file in enumerate(files):
     f = open(s_dir + file)
     data = json.load(f)
 
-    # Create relevant arrays (X_tick time of data, X_val value, Dry_tick time drying begins)
+    # Create relevant arrays (X_tick time of data, X_val value)
     T_tick = []
     T_val = []
     H_tick = []
     H_val = []
     TH_tick = []
     TH_val = []
-    Dry_tick = []
+    Phase_tick = []
+    Phase_val = []
 
     # Read all the relevant data
     for line in data['Logs']:
-
-        if (line['name'] == "Phase type" and line['value'] == "Drying"):
-
-            Dry_tick.append(line['tick'])
-
-        if (line['name'] == "Temperature Wash Tank"):
-
-            T_tick.append(float(line['tick']))
-            T_val.append(float(line['value']))
-
+        # Save washing/drying phases and when they happen
+        if (line['name'] == "Phase type"):
+            # Tick when phase changes (Loading, Prewash, Disinfection, Drying, Unloading)
+            Phase_tick.append(line['tick'])     # Tick value
+            Phase_val.append(line['value'])     # Property value (phase name)
+        # Humidity of air coming out of chamber
         if (line['name'] == "Humidity"):
-
-            H_tick.append(float(line['tick']))
-            H_val.append(float(line['value']))
-
+            H_tick.append(float(line['tick']))  # Tick value
+            H_val.append(float(line['value']))  # Property value
+        # Temperature of air coming out of chamber
         if (line['name'] == "Temperature Humidity"):
-
-            TH_tick.append(float(line['tick']))
-            TH_val.append(float(line['value']))
+            TH_tick.append(float(line['tick'])) # Tick value
+            TH_val.append(float(line['value'])) # Property value
 
     # Dictionary of lists
-    values = {'T_tick': T_tick, 'T_val': T_val, "H_tick": H_tick, "H_val": H_val, "TH_tick": TH_tick, "TH_val": TH_val, "Dry_tick": Dry_tick}
+    values = {'T_tick': T_tick, 'T_val': T_val, "H_tick": H_tick, "H_val": H_val, "TH_tick": TH_tick, "TH_val": TH_val, "Phase_tick": Phase_tick, "Phase_val": Phase_val}
     # Convert dictionary of lists into pandas dataframe (fill unequal lengths with NaN values)
     dataframe = pd.DataFrame({ key:pd.Series(value) for key, value in values.items() })
     
