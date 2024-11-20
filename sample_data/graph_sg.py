@@ -42,7 +42,7 @@ for fname in fnames:
 
         # Smooth data and plot smoothed-out curve
         y_filter = savgol_filter(x=prop, window_length=25, polyorder=3)
-        plt.plot(np.asarray(tick, float), np.asarray(y_filter, float), linestyle="-", marker='', label=str(property) + " sg filter")
+        plt.plot(np.asarray(tick, float), np.asarray(y_filter, float), linestyle="-", marker='', label=str(property))
 
 
     # Plot relevant phases
@@ -54,14 +54,15 @@ for fname in fnames:
             tick_phase.append(line['tick']/1000/60)
             phase_type.append(line['value'])
 
-    #plt.vlines(tick_phase, -10, 120, colors="black", linestyle="--")
-    #for i in range(len(phase_type)):
-    #    plt.text(x=tick_phase[i]+0.05, y=-10+5*i, s=phase_type[i])
+    plt.vlines(tick_phase, -10, 120, colors="black", linestyle="--")
+    for i in range(len(phase_type)):
+        plt.text(x=tick_phase[i]+0.05, y=-10+5*i, s=phase_type[i])
 
     # Show plot
-    plt.title("Properties over Time")
+    plt.title("Temperature and humidity over time (SavGol filter)")
     plt.xlabel(r"Time $t$ [min]")
     plt.ylabel("Value")
 
-    #plt.legend()
-    plt.savefig(str( "./graphs/savitzky-golay/" + fname.split(".")[0] + ".png" ), dpi=300)
+    plt.legend()
+    plt.show()
+    #plt.savefig(str( "./graphs/savitzky-golay/" + fname.split(".")[0] + ".png" ), dpi=300)
