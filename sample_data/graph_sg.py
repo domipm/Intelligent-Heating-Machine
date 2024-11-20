@@ -13,6 +13,9 @@ gdir = "./graphs/savitzky-golay"
 # List of all files available
 fnames = []
 
+# Colors for plots
+colors = ["tab:blue", "tab:blue", "tab:orange", "tab:orange", "tab:green", "tab:green"]
+
 for file in os.listdir(fdir):
     fnames.append(file)
 
@@ -21,14 +24,12 @@ fnames = np.sort(fnames)
 
 for fname in fnames:
 
-    plt.close()
-
     f = open(fdir + fname)
     data = json.load(f)
 
     properties = ["Temperature Humidity", "Humidity", "Temperature Wash Tank"]
 
-    for property in properties:
+    for k, property in enumerate(properties):
 
         prop = []
         tick = []
@@ -38,12 +39,11 @@ for fname in fnames:
                 prop.append(line['value'])
                 tick.append(line['tick']/1000/60)
 
-        #plt.plot(np.asarray(tick, float), np.asarray(prop, float), linestyle="-", linewidth=1, marker=".", label=str(property))
+        plt.plot(np.asarray(tick, float), np.asarray(prop, float), linestyle="-", linewidth=1, marker=".", markersize=2, label=str(property), alpha=0.25, color=colors[k])
 
         # Smooth data and plot smoothed-out curve
         y_filter = savgol_filter(x=prop, window_length=50, polyorder=3)
-        plt.plot(np.asarray(tick, float), np.asarray(y_filter, float), linestyle="-", marker='', label=str(property))
-
+        plt.plot(np.asarray(tick, float), np.asarray(y_filter, float), linestyle="-", marker='', label=property + " fit", color=colors[k])
 
     # Plot relevant phases
     tick_phase = []
@@ -62,7 +62,6 @@ for fname in fnames:
     plt.title("Temperature and humidity over time (SavGol filter)")
     plt.xlabel(r"Time $t$ [min]")
     plt.ylabel("Value")
-
-    plt.legend()
-    plt.show()
-    #plt.savefig(str( "./graphs/savitzky-golay/" + fname.split(".")[0] + ".png" ), dpi=300)
+    plt.legend(bbox_to_anchor=(1.015, 1.015))
+    plt.savefig(str( "./graphs/savitzky-golay/" + fname.split(".")[0] + ".png" ), dpi=300, bbox_inches="tight")
+    plt.close()
