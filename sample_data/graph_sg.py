@@ -41,7 +41,7 @@ for fname in fnames:
         #plt.plot(np.asarray(tick, float), np.asarray(prop, float), linestyle="-", linewidth=1, marker=".", label=str(property))
 
         # Smooth data and plot smoothed-out curve
-        y_filter = savgol_filter(x=prop, window_length=25, polyorder=3)
+        y_filter = savgol_filter(x=prop, window_length=50, polyorder=3)
         plt.plot(np.asarray(tick, float), np.asarray(y_filter, float), linestyle="-", marker='', label=str(property))
 
 
