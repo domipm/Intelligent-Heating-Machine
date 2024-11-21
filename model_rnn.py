@@ -4,14 +4,15 @@
 
 TO-DO / IDEAS
 
-    - The main idea is to use a RNN Time-Series Forecasting to predict future values
-      of the parameters (temperature and humidity) based on the previous values.
+    - The main idea is to use a RNN (LSTM) Time-Series Forecasting to predict future
+      values of the parameters (temperature and humidity) based on the previous values.
       Usually, this is done for a single time series over a long period of time,
-      rather than many different shorter series. Concatenation doesn't make sense!
+      rather than many different shorter series.
 
 '''
 
 import os
+import datetime
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -19,112 +20,114 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 
-directory = "./sample_data/database/train/"
-files = np.sort(os.listdir(directory))
+# Directories where data is
+fdir = "./sample_data/database/"
+files = np.sort(os.listdir(fdir))
 
-# Concatenate all the data available
-T = []
-TH = []
+# Empty numpy array to store humidity values
+datax = []
+datay = []
 
-H = np.empty(0)
+# Value to store first tick of each file
+first_tick = 0
 
+# Obtain the relevant array to forecast (humidity values)
 for file in files:
 
-    df = pd.read_csv(directory + file)
+    # Open .csv file as pandas dataframe
+    df = pd.read_csv(fdir + file)
     df = df.fillna(0)
 
+    # Find tick values when drying starts and ends
     for row in df.itertuples(index=False, name="Pandas"):
-        if getattr(row, "H_tick") > df["Dry_tick"].iloc[0]:
-            T.append(getattr(row, "T_val"))
-            TH.append(getattr(row, "TH_val"))
-            #H.append(getattr(row, "H_val"))
-            H = np.append(H, getattr(row, "H_val"))
+        if getattr(row, "Phase_val") == "Drying":
+            drying_start = getattr(row, "Phase_tick")
+        if getattr(row, "Phase_val") == "Unloading":
+            drying_end = getattr(row, "Phase_tick")
+    # Find values of humidity
+    for row in df.itertuples(index=False, name="Pandas"):
+        row_htick = getattr(row, "H_tick")
+        if row_htick > drying_start and row_htick < drying_end:
+            datax.append( getattr(row, "H_tick") + first_tick )
+            datay.append( getattr(row, "H_val") )
 
-# Already padded! Same length!
-Tx = np.arange(start=0, stop=len(T))
-THx = np.arange(start=0, stop=len(TH))
-Hx = np.arange(start=0, stop=len(H))
-print(len(Tx), len(THx), len(Hx))
+    first_tick += datax[0]
 
-# For now, let's focus only on Humidity
+# Plot data with arange and with tick values (to compare)
+fig, ax = plt.subplots(nrows=1, ncols=2)
+fig.set_size_inches(w=12, h=6)
+ax[0].plot(datax, datay)
+ax[1].plot(np.arange(len(datay)), datay)
+#plt.show()
+plt.close()
 
-# Create relevant pytorch tensors
-x = torch.arange(0,len(H),1)
-print(type(x))
-# Convert numpy array into pytorch tensor
-y = torch.from_numpy(H).to(torch.float32)
+# Split data into train and test datasets
+train_datay = datay[:835]
+test_datay = datay[835:]
+x = np.arange(len(datay))
+train_x = x[:835]
+test_x = x[835:]
+plt.plot(train_x, train_datay, marker=".")
+plt.plot(test_x, test_datay, marker=".")
+#plt.show()
+plt.close()
 
-# Split data into train/test
-test_size = 40
-train_set = y[:-test_size]
-test_set = y[:-test_size]
+# Setup PyTorch device
+device = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+torch.set_default_device(device)
+torch.device(device)
 
-# Create data batches
-def input_data(seq,ws):
-    out = []
-    L = len(seq)
-    
-    for i in range(L-ws):
-        window = seq[i:i+ws]
-        label = seq[i+ws:i+ws+1]
-        out.append((window,label))
-    
-    return out
+# Setup random seed
+seed = datetime.datetime.now().timestamp()
+torch.manual_seed(seed)
 
-window_size = 40
-train_data = input_data(train_set, window_size)
+# Convert train and test data to tensors
+X_train = torch.from_numpy(train_x).float().to(device)
+X_train = X_train.unsqueeze(-1)
+y_train = torch.from_numpy(test_x).float().to(device)
 
-# Define model (LSTM)
+# Define LSTM Model
 class LSTM(nn.Module):
 
-    def __init__(self, input_size = 1, hidden_size = 50, out_size = 1):
+    def __init__(self, input_size=1, hidden_layer_size=50, output_size=1):
 
         super().__init__()
-        self.hidden_size = hidden_size
-        self.lstm = nn.LSTM(input_size, hidden_size)
-        self.linear = nn.Linear(hidden_size,out_size)
-        self.hidden = (torch.zeros(1,1,hidden_size),torch.zeros(1,1,hidden_size))
 
-    def forward(self,seq):
-        lstm_out, self.hidden = self.lstm(seq.view(len(seq),1,-1), self.hidden)
-        pred = self.linear(lstm_out.view(len(seq),-1))
-        return pred[-1]
+        self.hidden_layer_size = hidden_layer_size
+        self.lstm = nn.LSTM(input_size, hidden_layer_size, device=device)
+        self.linear = nn.Linear(hidden_layer_size, output_size, device=device)
     
-torch.manual_seed(42)
-model = LSTM()
-criterion = nn.MSELoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
-
-epochs = 10
-future = 40
-
-for i in range(epochs):
-
-    print("Epoch " + str(i))
+    def forward(self, input_seq):
+        input_seq.to(device)
+        lstm_out, _ = self.lstm(input_seq)
+        predictions = self.linear(lstm_out[:, -1])
+        return predictions
     
-    for k, (seq, y_train) in enumerate(train_data):
+# Initialize model
+model = LSTM(input_size=1, hidden_layer_size=50, output_size=1).to(device)
+# Loss function
+loss = nn.MSELoss()
+# Optimizer
+optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+# Number of epochs to train for
+epochs = 100
 
-        print("Batch " + str(k))
-
-        optimizer.zero_grad()
-        model.hidden = (torch.zeros(1,1,model.hidden_size),
-                       torch.zeros(1,1,model.hidden_size))
-        
-        y_pred = model(seq)
-        loss = criterion(y_pred, y_train)
-        loss.backward()
-        optimizer.step()
-        
-    print(f"Epoch {i} Loss: {loss.item()}")
+# Training loop
+for epoch in range(epochs):
     
-    preds = train_set[-window_size:].tolist()
-    for f in range(future):
-        seq = torch.FloatTensor(preds[-window_size:])
-        with torch.no_grad():
-            model.hidden = (torch.zeros(1,1,model.hidden_size),
-                           torch.zeros(1,1,model.hidden_size))
-            preds.append(model(seq).item())
-        
-    loss = criterion(torch.tensor(preds[-window_size:]), y[760:])
-    print(f"Performance on test range: {loss}")
+    # Set model to train mode
+    model.train()
+    # Reset gradients
+    optimizer.zero_grad()
 
+    # Forward pass
+    y_pred = model(X_train).to(device)
+
+    # Compute the loss
+    loss = loss(y_pred, y_train).to(device)
+
+    # Backpropagation
+    loss.backward()
+    optimizer.step()
+
+    print("Epoch {}/{}\tLoss {}".format(epoch, epochs, loss.item()))

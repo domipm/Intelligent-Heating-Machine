@@ -14,7 +14,7 @@ gdir = "./graphs/exp-smooth/"
 fnames = []
 
 # Colors for plots
-colors = ["tab:blue", "tab:blue", "tab:orange", "tab:orange", "tab:green", "tab:green"]
+colors = ["tab:blue", "tab:orange", "tab:green"]
 
 for file in os.listdir(fdir):
     fnames.append(file)

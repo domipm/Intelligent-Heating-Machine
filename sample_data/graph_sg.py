@@ -18,7 +18,7 @@ window = 25
 order = 3
 
 # Colors for plots
-colors = ["tab:blue", "tab:blue", "tab:orange", "tab:orange", "tab:green", "tab:green"]
+colors = ["tab:blue", "tab:orange", "tab:green"]
 
 for file in os.listdir(fdir):
     fnames.append(file)
