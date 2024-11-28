@@ -49,7 +49,6 @@ class PINN(nn.Module):
         )
         # Trainable parameters
         self.alpha = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
-        self.beta = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
 
     def forward(self, x):
         # Return model's response to tensor
@@ -81,8 +80,11 @@ for row in df.itertuples(index=False, name="Pandas"):
         datay.append( getattr(row, "H_val") )
 
 # Ignore first few datapoints (seem to be problematic)
-datax = datax[10:]
-datay = datay[10:]
+#datax = datax[10:]
+#datay = datay[10:]
+
+datax = np.linspace(0,10,50)
+datay = np.exp(-0.25*datax)
 
 # Extract some values to use as training points (take every n-th data point)
 n_sep = 10
@@ -117,7 +119,7 @@ learning_rate = 0.001
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Training hyperparameters
-epochs = 50000
+epochs = 10000
 # Physics loss weight
 alpha_data = 0.5
 alpha_phys = 0.5
@@ -140,7 +142,7 @@ for epoch in range(epochs):
     # First derivative (dy/dx)
     dy = torch.autograd.grad(out_physics, datax_physics, torch.ones_like(out_physics), create_graph=True)[0]
     # Residual of differential equation
-    res = dy + model.alpha * out_physics + model.beta
+    res = dy + model.alpha * out_physics
     # Compute physics loss
     loss_physics = torch.mean(res ** 2)
 
@@ -154,8 +156,9 @@ for epoch in range(epochs):
     optimizer.step()
 
     # Print epoch info
-    print("Epoch ", epoch, "Loss ", loss.item(), "a = ", model.alpha.item(), "b = ", model.beta.item())
+    print("Epoch ", epoch, "Loss ", loss.item(), "a = ", model.alpha.item())
 
 plt.plot(datax_physics.detach().numpy(), out_physics.detach().numpy(), label="Neural Network")
+plt.plot(datax_physics.detach().numpy(), np.exp(-model.alpha.detach().numpy()*datax_physics.detach().numpy()), label="Function Predicted")
 plt.legend()
 plt.show()
