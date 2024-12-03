@@ -64,7 +64,7 @@ datax = []
 datay = []
 
 # Open .csv file as pandas dataframe
-df = pd.read_csv(fdir + "1990.csv")
+df = pd.read_csv(fdir + "2050.csv")
 df = df.fillna(0)
 
 # Find tick values when drying starts and ends
@@ -92,6 +92,10 @@ datay_train = datay[0::n_sep]
 #datax_train = datax_train[:8]
 #datay_train = datay_train[:8]
 
+# Normalize datax_train values (between 0 and 1)
+datax_train = datax_train / np.max(datax_train)
+datax = datax / np.max(datax)
+
 # Convert to tensors
 datax_train_t = torch.from_numpy(np.array(datax_train, dtype=float)).type(dtype=torch.float32).view(-1,1)
 datay_train_t = torch.from_numpy(np.array(datay_train, dtype=float)).type(dtype=torch.float32).view(-1,1)
@@ -117,10 +121,10 @@ learning_rate = 0.001
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Training hyperparameters
-epochs = 50000
+epochs = 10000
 # Physics loss weight
-alpha_data = 0.5
-alpha_phys = 0.5
+alpha_data = 1
+alpha_phys = 0.0001
 
 # Training loop
 for epoch in range(epochs):
@@ -140,7 +144,8 @@ for epoch in range(epochs):
     # First derivative (dy/dx)
     dy = torch.autograd.grad(out_physics, datax_physics, torch.ones_like(out_physics), create_graph=True)[0]
     # Residual of differential equation
-    res = dy + model.alpha * out_physics + model.beta
+    #res = dy - model.alpha * out_physics + model.beta
+    res = dy - model.alpha + model.beta * out_physics
     # Compute physics loss
     loss_physics = torch.mean(res ** 2)
 
@@ -154,8 +159,12 @@ for epoch in range(epochs):
     optimizer.step()
 
     # Print epoch info
-    print("Epoch ", epoch, "Loss ", loss.item(), "a = ", model.alpha.item(), "b = ", model.beta.item())
+    print("Epoch ", epoch, "Loss ", loss.item())
+    print(model.alpha)
+    # Print model's parameters
+
 
 plt.plot(datax_physics.detach().numpy(), out_physics.detach().numpy(), label="Neural Network")
 plt.legend()
+plt.savefig("./graph_out/humidity.png", dpi=300)
 plt.show()

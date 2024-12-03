@@ -89,7 +89,7 @@ y_train = torch.from_numpy(test_x).float().to(device)
 # Define LSTM Model
 class LSTM(nn.Module):
 
-    def __init__(self, input_size=1, hidden_layer_size=50, output_size=1):
+    def __init__(self, input_size=len(X_train), hidden_layer_size=50, output_size=1):
 
         super().__init__()
 

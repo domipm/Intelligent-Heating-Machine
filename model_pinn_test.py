@@ -161,4 +161,5 @@ for epoch in range(epochs):
 plt.plot(datax_physics.detach().numpy(), out_physics.detach().numpy(), label="Neural Network")
 plt.plot(datax_physics.detach().numpy(), np.exp(-model.alpha.detach().numpy()*datax_physics.detach().numpy()), label="Function Predicted")
 plt.legend()
+plt.savefig("./graph_out/exponential.png", dpi=300)
 plt.show()
