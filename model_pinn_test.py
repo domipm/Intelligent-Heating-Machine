@@ -20,21 +20,23 @@ TO-DO / IDEAS:
 
 # Import all necessary libraries
 
-import os
-import random
-import datetime
+import  os
+import  random
+import  datetime
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+import  numpy               as      np
+import  pandas              as      pd
+import  matplotlib.pyplot   as      plt
 
-import torch
-import torch.nn as nn
+from    scipy               import  interpolate
+
+import  torch
+import  torch.nn            as      nn
 
 # Fully-Connected Neural Network
 class PINN(nn.Module):
     # Initialization function
-    def __init__(self, in_shape):
+    def __init__(self, in_shape, size):
         # Initialize parent modules
         super().__init__()
         # Define the forward pass of the network sequentially
@@ -49,6 +51,9 @@ class PINN(nn.Module):
         )
         # Trainable parameters
         self.alpha = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+        self.beta = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+        # Trainable time-vectors
+        self.water_content = nn.Parameter(torch.randn(size, dtype=torch.float32), requires_grad=True)
 
     def forward(self, x):
         # Return model's response to tensor
@@ -80,19 +85,37 @@ for row in df.itertuples(index=False, name="Pandas"):
         datay.append( getattr(row, "H_val") )
 
 # Ignore first few datapoints (seem to be problematic)
-#datax = datax[10:]
-#datay = datay[10:]
+datax = np.array(datax[10:])
+datay = np.array(datay[10:])
 
-datax = np.linspace(0,10,50)
-datay = np.exp(-0.25*datax)
+# Remove any duplicate values of x
+_, unique_indices = np.unique(datax, return_index=True)
+# Use only unique indices for data
+datax = datax[unique_indices]
+datay = datay[unique_indices]
+
+# Normalize datax to range [0,1]
+datax -= np.min(datax)
+datax /= np.max(datax)
+
+# Interpolate data
+n_datapoints = 250
+interp = interpolate.interp1d(datax, datay, kind="linear")
+datax = np.linspace(min(datax), max(datax), n_datapoints)
+datay = interp(datax)
 
 # Extract some values to use as training points (take every n-th data point)
-n_sep = 10
+n_sep = 5
 datax_train = datax[0::n_sep]
 datay_train = datay[0::n_sep]
+
 # Only consider first few points
 #datax_train = datax_train[:8]
 #datay_train = datay_train[:8]
+
+# Normalize datax_train values (between 0 and 1)
+#datax_train = datax_train / np.max(datax_train)
+#datax = datax / np.max(datax)
 
 # Convert to tensors
 datax_train_t = torch.from_numpy(np.array(datax_train, dtype=float)).type(dtype=torch.float32).view(-1,1)
@@ -111,7 +134,7 @@ torch.manual_seed(seed)
 random.seed(seed)
 
 # Initialize model
-model = PINN(in_shape = 1) # len(datax_train_t))
+model = PINN(in_shape = 1, size = len(datax))
 
 # Optimizer hyperparameters
 learning_rate = 0.001
@@ -121,8 +144,8 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 # Training hyperparameters
 epochs = 10000
 # Physics loss weight
-alpha_data = 0.5
-alpha_phys = 0.5
+alpha_data = 0
+alpha_phys = 1
 
 # Training loop
 for epoch in range(epochs):
@@ -142,7 +165,7 @@ for epoch in range(epochs):
     # First derivative (dy/dx)
     dy = torch.autograd.grad(out_physics, datax_physics, torch.ones_like(out_physics), create_graph=True)[0]
     # Residual of differential equation
-    res = dy + model.alpha * out_physics
+    res = dy - model.water_content + model.beta * out_physics
     # Compute physics loss
     loss_physics = torch.mean(res ** 2)
 
@@ -156,10 +179,13 @@ for epoch in range(epochs):
     optimizer.step()
 
     # Print epoch info
-    print("Epoch ", epoch, "Loss ", loss.item(), "a = ", model.alpha.item())
+    print("Epoch ", epoch, "Loss ", loss.item())
+    # Print model's parameters
+    print("Alpha: ", model.alpha.item())
+    print("Beta: ", model.beta.item())
+    print("Water Content: ", model.water_content)
 
 plt.plot(datax_physics.detach().numpy(), out_physics.detach().numpy(), label="Neural Network")
-plt.plot(datax_physics.detach().numpy(), np.exp(-model.alpha.detach().numpy()*datax_physics.detach().numpy()), label="Function Predicted")
 plt.legend()
-plt.savefig("./graph_out/exponential.png", dpi=300)
+#plt.savefig("./graph_out/humidity.png", dpi=300)
 plt.show()

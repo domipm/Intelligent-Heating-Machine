@@ -20,16 +20,41 @@ TO-DO / IDEAS:
 
 # Import all necessary libraries
 
-import os
-import random
-import datetime
+import  os
+import  random
+import  datetime
 
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
+import  numpy               as np
+import  pandas              as pd
+import  matplotlib.pyplot   as plt
 
-import torch
-import torch.nn as nn
+import  torch
+import  torch.nn            as nn
+from    torch.utils.data    import Dataset
+
+# Custom class for loading time-series from each file
+class DryingDataset(Dataset):
+
+    # Initialization function
+    def __init__(self, directory):
+
+        # Initialize parent class
+        super().__init__()
+
+        # Initialize directory
+        self.directory = directory
+
+        return
+    
+    # Size of dataset (numer of all time-series / files)
+    def __len__(self):
+
+        return
+    
+    # Get single time-series / file from dataset
+    def __getitem__(self, index):
+
+        return
 
 # Fully-Connected Neural Network
 class PINN(nn.Module):
