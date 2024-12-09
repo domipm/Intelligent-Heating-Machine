@@ -54,6 +54,10 @@ for k, file in enumerate(files):
             # Tick when phase changes (Loading, Prewash, Disinfection, Drying, Unloading)
             Phase_tick.append(line['tick'])     # Tick value
             Phase_val.append(line['value'])     # Property value (phase name)
+        # Temperature of wash tank
+        if (line['name'] == "Temperature Wash Tank"):
+            T_tick.append(float(line['tick'])) # Tick value
+            T_val.append(float(line['value'])) # Property value
         # Humidity of air coming out of chamber
         if (line['name'] == "Humidity"):
             H_tick.append(float(line['tick']))  # Tick value
