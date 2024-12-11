@@ -1,95 +1,32 @@
-# Physics-Informed Neural Network
-
-'''
-
-TO-DO / IDEAS:
-
-    - Use Physics-Informed Neural Network to estimate Temperature and Humidity of the air.
-    This is done by creating a simple fully-connected model with a loss function given
-    by the coupled ordinary differential equations of our system. The unknown parameters
-    will also be included as learnable parameters by the model. Focus only on drying for now.
-    Inputs: Time, Temperature, Humidity
-    Parameters: (relevant parameters in differential equations)
-    Outputs: Time, Temperature, Humidity
-    Once the model has learned the relevant parameters, we can continue training with rest of files.
-    Lastly, we evaluate the model on new data an see how it performs. The goal is that, by only using
-    a couple of experimental data points (first few in time series), we can estimate how the total graph
-    will look like.
-
-'''
-
 # Import all necessary libraries
 
 import  os
 import  random
 import  datetime
 
-import  numpy               as np
-import  pandas              as pd
-import  matplotlib.pyplot   as plt
+import  numpy               as      np
+import  pandas              as      pd
+import  matplotlib.pyplot   as      plt
+
+import  scipy.signal        as      signal
+from    scipy               import  interpolate
 
 import  torch
-import  torch.nn            as nn
-from    torch.utils.data    import Dataset
-
-# Custom class for loading time-series from each file
-class DryingDataset(Dataset):
-
-    # Initialization function
-    def __init__(self, directory):
-
-        # Initialize parent class
-        super().__init__()
-
-        # Initialize directory
-        self.directory = directory
-
-        return
-    
-    # Size of dataset (numer of all time-series / files)
-    def __len__(self):
-
-        return
-    
-    # Get single time-series / file from dataset
-    def __getitem__(self, index):
-
-        return
-
-# Fully-Connected Neural Network
-class PINN(nn.Module):
-    # Initialization function
-    def __init__(self, in_shape):
-        # Initialize parent modules
-        super().__init__()
-        # Define the forward pass of the network sequentially
-        self.network = nn.Sequential(
-            nn.LazyLinear(out_features=64),
-            nn.ReLU(),
-            nn.LazyLinear(out_features=64),
-            nn.ReLU(),
-            nn.LazyLinear(out_features=64),
-            nn.ReLU(),
-            nn.LazyLinear(out_features=in_shape)
-        )
-        # Trainable parameters
-        self.alpha = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
-        self.beta = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
-
-    def forward(self, x):
-        # Return model's response to tensor
-        return self.network(x)
+import  torch.nn            as      nn
 
 # Directories where data is
 fdir = "./sample_data/database/"
 files = np.sort(os.listdir(fdir))
 
-# Load data from one file (eg. 1990)
-datax = []
-datay = []
+# Humidity arrays
+hdatax = []
+hdatay = []
+# Temperature arrays
+tdatax = []
+tdatay = []
 
 # Open .csv file as pandas dataframe
-df = pd.read_csv(fdir + "2050.csv")
+df = pd.read_csv(fdir + "1990.csv")
 df = df.fillna(0)
 
 # Find tick values when drying starts and ends
@@ -102,43 +39,115 @@ for row in df.itertuples(index=False, name="Pandas"):
 for row in df.itertuples(index=False, name="Pandas"):
     row_htick = getattr(row, "H_tick")
     if row_htick > drying_start and row_htick < drying_end:
-        datax.append( getattr(row, "H_tick") )
-        datay.append( getattr(row, "H_val") )
+        hdatax.append( getattr(row, "H_tick")/1000/60 ) # Tick values in minutes
+        hdatay.append( getattr(row, "H_val") )
+# Find values of temperature
+for row in df.itertuples(index=False, name="Pandas"):
+    row_htick = getattr(row, "T_tick")
+    if row_htick > drying_start and row_htick < drying_end:
+        tdatax.append( getattr(row, "T_tick")/1000/60 ) # Tick values in minutes
+        tdatay.append( getattr(row, "T_val") )
 
-# Ignore first few datapoints (seem to be problematic)
-datax = datax[10:]
-datay = datay[10:]
+# Function used to clean-up the data, apply smoothing, and interpolate to fixed length
+def data_clean(x, y, ignore = 10, out_len = 250, sg_window = 25, sg_order = 3):
 
-# Extract some values to use as training points (take every n-th data point)
-n_sep = 10
-datax_train = datax[0::n_sep]
-datay_train = datay[0::n_sep]
-# Only consider first few points
-#datax_train = datax_train[:8]
-#datay_train = datay_train[:8]
+    # Ignore first few datapoints
+    x = np.array(x[ignore:])
+    y = np.array(y[ignore:])
+    # Remove any duplicates
+    _, unique_indices = np.unique(x, return_index=True)
+    # Use only unique indices for data
+    x = x[unique_indices]
+    y = y[unique_indices]
+    # Normalize time to range (0,1) (or drying time)
+    x -= np.min(x)
+    # x /= np.max(x)
+    # Interpolate data
+    interp = interpolate.interp1d(x, y, kind = "linear")
+    x = np.linspace(min(x), max(x), out_len)
+    y = interp(x)
+    # Apply Savitzky-Golay filtering to smooth data
+    y = signal.savgol_filter(y, window_length = sg_window, polyorder = sg_order)
 
-# Normalize datax_train values (between 0 and 1)
-datax_train = datax_train / np.max(datax_train)
-datax = datax / np.max(datax)
+    return x, y
 
-# Convert to tensors
-datax_train_t = torch.from_numpy(np.array(datax_train, dtype=float)).type(dtype=torch.float32).view(-1,1)
-datay_train_t = torch.from_numpy(np.array(datay_train, dtype=float)).type(dtype=torch.float32).view(-1,1)
+# Obtain cleaned-up data for temperature and humidity
+tdatax, tdatay = data_clean(tdatax, tdatay)
+hdatax, hdatay = data_clean(hdatax, hdatay)
 
-# Discretize time values over domain
-datax_physics = torch.from_numpy(np.linspace(min(datax), max(datax), len(datax_train_t))).requires_grad_(True).type(dtype=torch.float32).view(-1,1)
+# Data as tensors
+tdatax_t = torch.from_numpy(np.array(tdatax, dtype=float)).type(dtype=torch.float32).view(-1,1)
+tdatay_t = torch.from_numpy(np.array(tdatay, dtype=float)).type(dtype=torch.float32).view(-1,1)
+hdatax_t = torch.from_numpy(np.array(hdatax, dtype=float)).type(dtype=torch.float32).view(-1,1)
+hdatay_t = torch.from_numpy(np.array(hdatay, dtype=float)).type(dtype=torch.float32).view(-1,1)
 
-# Plot measured data and training points
-plt.plot(datax, datay, label="Measured Data")
-plt.plot(datax_train, datay_train, ".", label="Sample Datapoints")
+# Datapoints to train (first few minutes)
+sample_start = 0
+sample_end = 35
+sample_step = 5
+tdatax_sample = tdatax[sample_start:sample_end:sample_step]
+tdatay_sample = tdatay[sample_start:sample_end:sample_step]
+hdatax_sample = hdatax[sample_start:sample_end:sample_step]
+hdatay_sample = hdatay[sample_start:sample_end:sample_step]
+
+# Datapoints as tensors
+tdatax_sample_t = torch.from_numpy(np.array(tdatax_sample, dtype=float)).type(dtype=torch.float32).view(-1,1)
+tdatay_sample_t = torch.from_numpy(np.array(tdatay_sample, dtype=float)).type(dtype=torch.float32).view(-1,1)
+hdatax_sample_t = torch.from_numpy(np.array(hdatay_sample, dtype=float)).type(dtype=torch.float32).view(-1,1)
+hdatay_sample_t = torch.from_numpy(np.array(hdatay_sample, dtype=float)).type(dtype=torch.float32).view(-1,1)
+
+# Time tensor (for full time domain)
+time_t = tdatax_t.clone().detach().requires_grad_(True)
+time_sample_t = tdatax_sample_t.clone().detach().requires_grad_(True)
+
+# Concatenate temperature and humidity tensor data samples
+datay_sample_t = torch.cat((tdatay_sample_t, hdatay_sample_t), dim=1)
+
+# Plot sample data points
+plt.plot(tdatax_sample, tdatay_sample, color="tab:blue", markersize=8, linestyle="", marker=".")
+plt.plot(hdatax_sample, hdatay_sample, color="tab:orange", markersize=8, linestyle="", marker=".")
+
+# Plot time series
+plt.title("Drying Process Evolution")
+plt.xlabel(r"Time $[\text{min}]$")
+plt.ylabel("Sensor value")
+plt.plot(tdatax, tdatay, label = "Temperature", color="tab:blue")
+plt.plot(hdatax, hdatay, label = "Humidity", color="tab:orange")
 
 # Set seed for random numbers
 seed = datetime.datetime.now().timestamp()
 torch.manual_seed(seed)
 random.seed(seed)
 
+# Fully-Connected Neural Network
+class PINN(nn.Module):
+    # Initialization function
+    def __init__(self):
+        # Initialize parent modules
+        super().__init__()
+        # Define the forward pass of the network sequentially
+        self.network = nn.Sequential(
+            nn.LazyLinear(out_features=64),
+            nn.ReLU(),
+            nn.LazyLinear(out_features=64),
+            nn.ReLU(),
+            nn.LazyLinear(out_features=64),
+            nn.ReLU(),
+            nn.LazyLinear(out_features=2)
+        )
+
+        # Trainable parameters used in equations (constants approx.)
+        self.talpha = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+        self.tbeta = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+        self.halpha = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+        self.hbeta = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+
+    def forward(self, x):
+        # Return model's response to tensor
+        return self.network(x)
+
 # Initialize model
-model = PINN(in_shape = 1) # len(datax_train_t))
+model = PINN() # len(datax_train_t))
 
 # Optimizer hyperparameters
 learning_rate = 0.001
@@ -146,50 +155,61 @@ learning_rate = 0.001
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Training hyperparameters
-epochs = 10000
+epochs = 5000
 # Physics loss weight
-alpha_data = 1
-alpha_phys = 0.0001
+lambda_data = 1
+lambda_phys = 1
+
+# Set model to train mode
+model.train()
 
 # Training loop
 for epoch in range(epochs):
 
-    # Reset gradients to zero
-    optimizer.zero_grad()
+        # Reset gradients to zero
+        optimizer.zero_grad()
 
-    # Compute output from model using data samples
-    out_data = model(datax_train_t)
+        # Compute output based on samples
+        output = model(time_sample_t)
 
-    # Compute data loss (mean squared error)
-    loss_data = torch.mean((out_data - datay_train_t) ** 2)
+        # Compute data loss (mean squared error)
+        loss_data = torch.mean((output - datay_sample_t) ** 2)
+        
+        # First derivative temperature dT/dt
+        dT = torch.autograd.grad(output[:,0], time_sample_t, torch.ones_like(output[:,0]), create_graph=True)[0]
+        # First derivative humidity dh/dt
+        dh = torch.autograd.grad(output[:,1], time_sample_t, torch.ones_like(output[:,1]), create_graph=True)[0]
+        # Residual of differential equations
+        rest = (dT - model.talpha + model.tbeta * output[:,0])
+        resh = (dh - model.halpha + model.hbeta * output[:,1])
 
-    # Compute output from model using physics samples
-    out_physics = model(datax_physics)
+        # Compute physics loss
+        loss_phys = torch.mean(resh**2) + torch.mean(rest**2)
 
-    # First derivative (dy/dx)
-    dy = torch.autograd.grad(out_physics, datax_physics, torch.ones_like(out_physics), create_graph=True)[0]
-    # Residual of differential equation
-    #res = dy - model.alpha * out_physics + model.beta
-    res = dy - model.alpha + model.beta * out_physics
-    # Compute physics loss
-    loss_physics = torch.mean(res ** 2)
+        # Compute joint loss
+        loss = lambda_data * loss_data + lambda_phys * loss_phys
 
-    # Compute joint loss
-    loss = alpha_data * loss_data + alpha_phys * loss_physics
+        # Backpropagate joint loss
+        loss.backward()
 
-    # Backpropagate joint loss
-    loss.backward()
+        # Perform optimizers step
+        optimizer.step()
 
-    # Perform optimizers step
-    optimizer.step()
+        # Print epoch info
+        print("Epoch ", epoch + 1)
+        print("Loss ", loss.item())
+        print("Data Loss ", loss_data.item())
+        print("Physics Loss ", loss_phys.item())
 
-    # Print epoch info
-    print("Epoch ", epoch, "Loss ", loss.item())
-    print(model.alpha)
-    # Print model's parameters
+# Evaluate model for full time domain
+model.eval()
 
+with torch.no_grad():
+    # Generate the predictions
+    output = model(time_t)
 
-plt.plot(datax_physics.detach().numpy(), out_physics.detach().numpy(), label="Neural Network")
+plt.plot(time_t.detach().numpy(), output[:,0].detach().numpy(), color="mediumblue", linestyle="--")
+plt.plot(time_t.detach().numpy(), output[:,1].detach().numpy(), color="orangered", linestyle="--")
 plt.legend()
-plt.savefig("./graph_out/humidity.png", dpi=300)
+#plt.savefig("./graph_out/humidity.png", dpi=300)
 plt.show()
