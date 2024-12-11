@@ -1,22 +1,3 @@
-'''
-
-TO-DO / IDEAS:
-
-    - Use Physics-Informed Neural Network to estimate Temperature and Humidity of the air.
-    This is done by creating a simple fully-connected model with a loss function given
-    by the coupled ordinary differential equations of our system. The unknown parameters
-    will also be included as learnable parameters by the model. Focus only on drying for now.
-    Inputs: Time, Temperature, Humidity
-    Parameters: (relevant parameters in differential equations)
-    Outputs: Time, Temperature, Humidity
-    Once the model has learned the relevant parameters, we can continue training with rest of files.
-    Lastly, we evaluate the model on new data an see how it performs. The goal is that, by only using
-    a couple of experimental data points (first few in time series), we can estimate how the total graph
-    will look like.
-    Future work: Sliding-Windows? So that we can predict (and update prediction) based on incoming data.
-
-'''
-
 # Import all necessary libraries
 
 import  os
