@@ -101,6 +101,7 @@ time_t = tdatax_t.clone().detach().requires_grad_(True)
 time_sample_t = tdatax_sample_t.clone().detach().requires_grad_(True)
 
 # Concatenate temperature and humidity tensor data samples
+datay_t = torch.cat((tdatay_t, hdatay_t), dim=1)
 datay_sample_t = torch.cat((tdatay_sample_t, hdatay_sample_t), dim=1)
 
 # Plot sample data points
@@ -139,26 +140,34 @@ class PINN(nn.Module):
         # Trainable parameters used in equations (constants approx.)
         self.talpha = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
         self.tbeta = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+        self.tgamma = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+        self.tdelta = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
         self.halpha = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
         self.hbeta = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+        self.hgamma = nn.Parameter(torch.tensor([1.0], dtype=torch.float32), requires_grad=True)
+
+        # Trainable array parameters
+        self.water_content = nn.Parameter(torch.randn(len(time_t), dtype=torch.float32), requires_grad=True)
+        self.surf_temperature = nn.Parameter(torch.randn(len(time_t), dtype=torch.float32), requires_grad=True)
 
     def forward(self, x):
         # Return model's response to tensor
         return self.network(x)
 
 # Initialize model
-model = PINN() # len(datax_train_t))
+model = PINN()
 
 # Optimizer hyperparameters
-learning_rate = 0.001
+learning_rate = 0.01
 # Define optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Training hyperparameters
-epochs = 5000
+epochs = 10000
 # Physics loss weight
 lambda_data = 1
 lambda_phys = 1
+lambda_init = 1
 
 # Set model to train mode
 model.train()
@@ -180,14 +189,19 @@ for epoch in range(epochs):
         # First derivative humidity dh/dt
         dh = torch.autograd.grad(output[:,1], time_sample_t, torch.ones_like(output[:,1]), create_graph=True)[0]
         # Residual of differential equations
-        rest = (dT - model.talpha + model.tbeta * output[:,0])
-        resh = (dh - model.halpha + model.hbeta * output[:,1])
+        rest = (dT - model.talpha + model.tbeta * output[:,0] + model.tgamma *  time_sample_t )
+        resh = (dh - model.halpha + model.hbeta * output[:,1] + model.hgamma *  time_sample_t )
+        # Set initial conditions
+        T0 = tdatay_sample_t[0]
+        h0 = hdatay_sample_t[0]
+        # Initial condition loss
+        loss_ic = torch.mean((output[0,0] - T0)**2) + torch.mean((output[0,1] - h0)**2)
 
         # Compute physics loss
-        loss_phys = torch.mean(resh**2) + torch.mean(rest**2)
+        loss_phys = torch.mean(rest**2) + torch.mean(resh**2)
 
         # Compute joint loss
-        loss = lambda_data * loss_data + lambda_phys * loss_phys
+        loss = lambda_data * loss_data + lambda_phys * loss_phys + lambda_init * loss_ic
 
         # Backpropagate joint loss
         loss.backward()
