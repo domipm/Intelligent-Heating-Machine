@@ -197,5 +197,5 @@ handles.extend( [ nn_line ] )
 labels.extend( ["Simple NN"])
 
 plt.legend(handles, labels)
-plt.savefig("./graph_out/simple_nn.png", dpi=300)
+plt.savefig("./graph_out/result_nn.png", dpi=300)
 plt.show()

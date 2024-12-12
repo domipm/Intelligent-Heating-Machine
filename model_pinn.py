@@ -225,5 +225,5 @@ with torch.no_grad():
 plt.plot(time_t.detach().numpy(), output[:,0].detach().numpy(), color="mediumblue", linestyle="--")
 plt.plot(time_t.detach().numpy(), output[:,1].detach().numpy(), color="orangered", linestyle="--")
 plt.legend()
-#plt.savefig("./graph_out/humidity.png", dpi=300)
+plt.savefig("./graph_out/result_pinn.png", dpi=300)
 plt.show()
