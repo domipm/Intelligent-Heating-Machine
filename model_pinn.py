@@ -1,5 +1,3 @@
-# Import all necessary libraries
-
 import  os
 import  random
 import  datetime
@@ -105,8 +103,8 @@ datay_t = torch.cat((tdatay_t, hdatay_t), dim=1)
 datay_sample_t = torch.cat((tdatay_sample_t, hdatay_sample_t), dim=1)
 
 # Plot sample data points
-plt.plot(tdatax_sample, tdatay_sample, color="tab:blue", markersize=8, linestyle="", marker=".")
-plt.plot(hdatax_sample, hdatay_sample, color="tab:orange", markersize=8, linestyle="", marker=".")
+# plt.plot(tdatax_sample, tdatay_sample, color="tab:blue", markersize=8, linestyle="", marker=".")
+# plt.plot(hdatax_sample, hdatay_sample, color="tab:orange", markersize=8, linestyle="", marker=".")
 
 # Plot time series
 plt.title("Drying Process Evolution")
@@ -165,7 +163,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 # Training hyperparameters
 epochs = 10000
 # Physics loss weight
-lambda_data = 1
+lambda_data = 15
 lambda_phys = 1
 lambda_init = 1
 
@@ -179,29 +177,29 @@ for epoch in range(epochs):
         optimizer.zero_grad()
 
         # Compute output based on samples
-        output = model(time_sample_t)
+        output = model(time_t)
 
         # Compute data loss (mean squared error)
-        loss_data = torch.mean((output - datay_sample_t) ** 2)
+        loss_data = torch.mean((output - datay_t) ** 2)
         
         # First derivative temperature dT/dt
-        dT = torch.autograd.grad(output[:,0], time_sample_t, torch.ones_like(output[:,0]), create_graph=True)[0]
+        dT = torch.autograd.grad(output[:,0], time_t, torch.ones_like(output[:,0]), create_graph=True)[0]
         # First derivative humidity dh/dt
-        dh = torch.autograd.grad(output[:,1], time_sample_t, torch.ones_like(output[:,1]), create_graph=True)[0]
+        dh = torch.autograd.grad(output[:,1], time_t, torch.ones_like(output[:,1]), create_graph=True)[0]
         # Residual of differential equations
-        rest = (dT - model.talpha + model.tbeta * output[:,0] + model.tgamma *  time_sample_t )
-        resh = (dh - model.halpha + model.hbeta * output[:,1] + model.hgamma *  time_sample_t )
+        rest = (dT - model.talpha + model.tbeta * output[:,0] + model.tgamma *  time_t )
+        resh = (dh - model.halpha + model.hbeta * output[:,1] + model.hgamma *  time_t )
         # Set initial conditions
-        T0 = tdatay_sample_t[0]
-        h0 = hdatay_sample_t[0]
+        T0 = tdatay_t[0]
+        h0 = hdatay_t[0]
         # Initial condition loss
-        loss_ic = torch.mean((output[0,0] - T0)**2) + torch.mean((output[0,1] - h0)**2)
+        loss_init = torch.mean((output[0,0] - T0)**2) + torch.mean((output[0,1] - h0)**2)
 
         # Compute physics loss
         loss_phys = torch.mean(rest**2) + torch.mean(resh**2)
 
         # Compute joint loss
-        loss = lambda_data * loss_data + lambda_phys * loss_phys + lambda_init * loss_ic
+        loss = lambda_data * loss_data + lambda_phys * loss_phys + lambda_init * loss_init
 
         # Backpropagate joint loss
         loss.backward()
@@ -215,15 +213,13 @@ for epoch in range(epochs):
         print("Data Loss ", loss_data.item())
         print("Physics Loss ", loss_phys.item())
 
-# Evaluate model for full time domain
-model.eval()
+print("Final Parameters")
+print("T Alpha = \t", model.talpha.item())
+print("T Beta = \t", model.tbeta.item())
+print("T Gamma = \t", model.tgamma.item())
+print("H Alpha = \t", model.halpha.item())
+print("H Beta = \t", model.hbeta.item())
+print("H Gamma = \t", model.hgamma.item())
 
-with torch.no_grad():
-    # Generate the predictions
-    output = model(time_t)
-
-plt.plot(time_t.detach().numpy(), output[:,0].detach().numpy(), color="mediumblue", linestyle="--")
-plt.plot(time_t.detach().numpy(), output[:,1].detach().numpy(), color="orangered", linestyle="--")
-plt.legend()
-plt.savefig("./graph_out/result_pinn.png", dpi=300)
-plt.show()
+# Save model weights
+torch.save(model.state_dict(), "./pinn_weights.pt")

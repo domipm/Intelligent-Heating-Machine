@@ -1,13 +1,12 @@
 import  torch
-import  torch.nn            as      nn
 
-from    torch.utils.data    import  DataLoader
+import  matplotlib.pyplot   as      plt
 
 import  pinn_dataset
 import  pinn_model
 
 # Directory of train dataset
-test_dir = "./sample_data/database/test/"
+test_dir = "../sample_data/database/test/"
 
 # Initialize train dataset
 train_dataset = pinn_dataset.DryingDataset(test_dir)
@@ -15,7 +14,7 @@ train_dataset = pinn_dataset.DryingDataset(test_dir)
 # Initialize model
 model = pinn_model.PINN()
 # Load pre-trained weights
-model.load_state_dict(torch.load("./pinn_weights.pt", weights_only=True))
+model.load_state_dict(torch.load("./output/pinn_weights.pt", weights_only=True))
 # Set model to train mode
 model.train()
 
@@ -73,10 +72,11 @@ for epoch in range(epochs):
     # Print epoch info
     print("Epoch ", epoch + 1, "Loss ", loss.item(), end="\r")
 
-import  matplotlib.pyplot   as  plt
-
+plt.title("Drying Process PINN")
 plt.plot(time.detach().numpy(), vals[:,0].detach().numpy(), color="blue", linestyle="--")
 plt.plot(time.detach().numpy(), vals[:,1].detach().numpy(), color="red", linestyle="--")
-plt.plot(time.detach().numpy(), output[:,0].detach().numpy(), color="blue")
-plt.plot(time.detach().numpy(), output[:,1].detach().numpy(), color="red")
+plt.plot(time.detach().numpy(), output[:,0].detach().numpy(), color="blue", label="Temperature")
+plt.plot(time.detach().numpy(), output[:,1].detach().numpy(), color="red", label="Humidity")
+plt.legend()
+plt.savefig("./output/pinn_graph.png", dpi=300)
 plt.show()

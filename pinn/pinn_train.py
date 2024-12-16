@@ -72,4 +72,4 @@ for epoch in range(epochs):
     print("Epoch ", epoch + 1, "Loss ", loss.item(), end="\r")
 
 # Save model weights
-torch.save(model.state_dict(), "./pinn_weights.pt")
+torch.save(model.state_dict(), "./output/pinn_weights.pt")
