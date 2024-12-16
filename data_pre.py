@@ -1,16 +1,3 @@
-# Script used for all pre-processing of the data
-
-'''
-
-TO-DO / IDEAS:
-
-    - Include current washing/drying phase for RNN to use
-    - Include time of drying ("program duration" in data files)
-    - Smooth graph out (interpolation/spline) to have continuous time steps
-      (equal time ticks for all parameters)
-    
-'''
-
 import numpy as np
 import json
 import os
@@ -19,13 +6,11 @@ import matplotlib.pyplot as plt
 
 # Directory where measurements are
 m_dir = "./measurements/data/"
-# Directory where some sample data can be found
-s_dir = "./sample_data/data/"
 # Directory where dataframes are to be saved
-d_dir = "./sample_data/database/"
+d_dir = "./measurements/database/"
 
 # Sorted array of all file names available in directory
-files = np.sort(os.listdir(s_dir))
+files = np.sort(os.listdir(m_dir))
 
 # For each file, create pandas dataset with following columns:
 # T_tick, TempWT, H_tick, Hum, TH_tick, THum (other parameters in future maybe)
@@ -34,7 +19,7 @@ files = np.sort(os.listdir(s_dir))
 for k, file in enumerate(files):
 
     # Read first file
-    f = open(s_dir + file)
+    f = open(m_dir + file)
     data = json.load(f)
 
     # Create relevant arrays (X_tick time of data, X_val value)
