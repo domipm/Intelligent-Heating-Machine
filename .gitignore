@@ -161,7 +161,7 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-# VsCode
+# VScode
 .DS_Store
 tempCodeRunnerFile.py
 
@@ -170,3 +170,6 @@ tempCodeRunnerFile.py
 
 # MacOs
 Icon?
+
+# PyTorch model weights
+*.pt
