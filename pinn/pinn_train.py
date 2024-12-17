@@ -1,13 +1,14 @@
 import  torch
-import  torch.nn            as      nn
-
-from    torch.utils.data    import  DataLoader
 
 import  pinn_dataset
 import  pinn_model
 
+import  numpy               as  np
+
+import  matplotlib.pyplot   as  plt
+
 # Directory of train dataset
-train_dir = "./sample_data/database/train/"
+train_dir = "../measurements/database/train/"
 
 # Initialize train dataset
 train_dataset = pinn_dataset.DryingDataset(train_dir)
@@ -23,11 +24,14 @@ learning_rate = 0.01
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Training hyperparameters
-epochs = 1000
+epochs = 50
 # Physics loss weight
-lambda_data = 15
+lambda_data = 1
 lambda_phys = 1
 lambda_init = 1
+
+# Cumulative train loss
+loss_t = np.empty(shape=(epochs, 4), dtype=object)
 
 # Train all dataset over multiple epochs
 for epoch in range(epochs):
@@ -68,8 +72,21 @@ for epoch in range(epochs):
         # Perform optimizers step
         optimizer.step()
 
+    # Append to loss lists
+    loss_t[epoch] = [ loss.item(), loss_phys.item(), loss_data.item(), loss_init.item() ]
+
     # Print epoch info
     print("Epoch ", epoch + 1, "Loss ", loss.item(), end="\r")
 
 # Save model weights
 torch.save(model.state_dict(), "./output/pinn_weights.pt")
+
+# Plot evolution of all loss terms over time
+plt.title(r"Training Loss $\mathcal{L}$")
+plt.plot(range(epochs), loss_t[:,1], label=r"$\mathcal{L}_{\text{physics}}$")
+plt.plot(range(epochs), loss_t[:,2], label=r"$\mathcal{L}_{\text{data}}$")
+plt.plot(range(epochs), loss_t[:,3], label=r"$\mathcal{L}_{\text{init. c.}}$")
+plt.plot(range(epochs), loss_t[:,0], label=r"$\mathcal{L}_{\text{total}}$")
+plt.legend()
+plt.savefig("./output/pinn_trainloss.png", dpi=300)
+plt.show()
