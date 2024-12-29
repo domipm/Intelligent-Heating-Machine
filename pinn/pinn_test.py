@@ -43,7 +43,7 @@ vals = vals_full[0:35:5]
 plt.plot(time.detach().numpy(), vals[:,0].detach().numpy(), linestyle="", marker=".", color="blue")
 plt.plot(time.detach().numpy(), vals[:,1].detach().numpy(), linestyle="", marker=".", color="red")
 
-# Train all dataset over multiple epochs
+# Train file over multiple epochs
 for epoch in range(epochs):
 
     # Reset gradients
@@ -99,6 +99,8 @@ plt.plot(time_full.squeeze(1).detach().numpy(), output[:,1].detach().numpy(), co
 plt.legend()
 plt.savefig("./output/pinn_graph.png", dpi=300)
 plt.show()
+
+exit()
 
 # Combined, average loss
 loss_avg = 0
