@@ -3,6 +3,8 @@ import  torch
 import  pinn_dataset
 import  pinn_model
 
+import  random
+
 import  numpy               as  np
 
 import  matplotlib.pyplot   as  plt
@@ -12,6 +14,12 @@ train_dir = "../measurements/database/train/"
 
 # Initialize train dataset
 train_dataset = pinn_dataset.DryingDataset(train_dir)
+# train_dataloader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=1, shuffle=True)
+
+# Obtain array of all files
+dataset = []
+for n in range(len(train_dataset)):
+    dataset.append(train_dataset[n])
 
 # Initialize model
 model = pinn_model.PINN()
@@ -19,16 +27,16 @@ model = pinn_model.PINN()
 model.train()
 
 # Optimizer hyperparameters
-learning_rate = 0.01
+learning_rate = 0.001
 # Define optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Training hyperparameters
-epochs = 250
+epochs = 50
 # Physics loss weight
-lambda_data = 5
+lambda_data = 1
 lambda_phys = 1
-lambda_init = 1
+lambda_init = 0
 
 # Cumulative train loss
 loss_t = np.empty(shape=(epochs, 4), dtype=object)
@@ -36,8 +44,11 @@ loss_t = np.empty(shape=(epochs, 4), dtype=object)
 # Train all dataset over multiple epochs
 for epoch in range(epochs):
 
+    # Shuffle files
+    random.shuffle(dataset)
+
     # For each file in dataset
-    for k, (time, vals) in enumerate(train_dataset):
+    for k, (time, vals) in enumerate(dataset):
 
         # Reset gradients
         optimizer.zero_grad()
@@ -47,7 +58,7 @@ for epoch in range(epochs):
 
         # Compute data loss
         loss_data = torch.mean((output - vals)**2)
-
+        
         # Compute first derivative temperature dT/dt
         dT = torch.autograd.grad(output[:,0], time, torch.ones_like(output[:,0]), create_graph=True)[0]
         dH = torch.autograd.grad(output[:,1], time, torch.ones_like(output[:,1]), create_graph=True)[0]
@@ -64,7 +75,7 @@ for epoch in range(epochs):
         loss_init = torch.mean((output[0,0] - T0)**2) + torch.mean((output[0,1] - H0)**2)
 
         # Compute joint loss
-        loss = lambda_data * loss_data + lambda_phys * loss_phys + lambda_init * loss_init
+        loss = lambda_data * loss_data + lambda_phys * loss_phys + lambda_init * loss_init       
 
         # Backpropagate joint loss
         loss.backward()
