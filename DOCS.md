@@ -18,11 +18,11 @@ The file structure of this repository is as follows:
         ├ graph_sg.py        -- Applies Savitzky-Golay filter to data and generates graph
         ├ graph.py           -- Generates graphs of all data (for filtering purposes)
     ├ pinn/  -- Code used for Physics-Informed Neural Network (PINN)
-        ├ output/   -- Output graphs (*.png) and model weights (*.pt)
+        ├ output/         -- Output graphs (*.png) and model weights (*.pt)
         ├ pinn_dataset.py -- Dataset class for (*.csv) files to feed the network
-        ├ pinn_model.py -- Network model class that defines the architecture and learnable parameters
-        ├ pinn_train.py -- Training script for model
-        └ pinn_test.py -- Testing script for verifying model
+        ├ pinn_model.py   -- Network model class that defines the architecture and learnable parameters
+        ├ pinn_train.py   -- Training script for model
+        └ pinn_test.py    -- Testing script for verifying model
     ├ simple_net/ -- Used for comparison with standard neural network model (Some testing scripts)
     ├ data_pre.py -- Used for pre-processing measured data  
     ├ README.md 
