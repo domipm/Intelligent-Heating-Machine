@@ -27,7 +27,7 @@ model = pinn_model.PINN()
 model.train()
 
 # Optimizer hyperparameters
-learning_rate = 0.001
+learning_rate = 0.01
 # Define optimizer
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
@@ -36,7 +36,7 @@ epochs = 50
 # Physics loss weight
 lambda_data = 1
 lambda_phys = 1
-lambda_init = 0
+lambda_init = 1
 
 # Cumulative train loss
 loss_t = np.empty(shape=(epochs, 4), dtype=object)
@@ -63,7 +63,7 @@ for epoch in range(epochs):
         dT = torch.autograd.grad(output[:,0], time, torch.ones_like(output[:,0]), create_graph=True)[0]
         dH = torch.autograd.grad(output[:,1], time, torch.ones_like(output[:,1]), create_graph=True)[0]
         # Residual of differential equations
-        rest = (dT - model.talpha + model.tbeta * output[:,0] + model.tgamma *  time )
+        rest = (dT - model.talpha + model.tbeta * output[:,0] + model.tgamma *  time * output[:,0] )
         resh = (dH - model.halpha + model.hbeta * output[:,1] + model.hgamma *  time )
         # Compute physics loss
         loss_phys = torch.mean(rest**2) + torch.mean(resh**2)
