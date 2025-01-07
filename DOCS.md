@@ -37,7 +37,7 @@ The folder `simple_net` was also mainly used for testing new approaches in the d
 
 The measured data, located in a directory `m_dir` (which corresponds to the `/data/` folder) in `*.json` format, is read by the `./data_pre.py` script. This sorts the files and for each one of them, creates a `Pandas` dataset that includes the tick times and values for temperature, humidity, temperature humidity, and phase type properties found in the raw `*.json` files. As the last step, these databases are then saved into `*.csv` files in the `d_dir` directory (`/database/` folder).
 
-### PINN Dataset
+### PINN Dataset
 
 Next, we go into the `./pinn/` folder that contains the code for the Physics-Informed Neural Network. Here, the script `pinn_dataset.py` defines the custom data loader for our files. The class `DryingDataset`, which inherits from `PyTorch`'s `Dataset` component reads all the pre-processed `.csv` files generated with the previous script and then reads the temperature and humidity values after the drying phase has begun. These arrays are then passed on to the function `data_clean` that does the following:
 1. Removes the first few datapoints (as these tend to present some unwanted noise).
