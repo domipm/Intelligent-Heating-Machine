@@ -16,10 +16,10 @@ def rmse(pred, vals):
     err = np.sqrt(err)
     return err
 
-# Directory of train dataset
+# Directory of test dataset
 test_dir = "../measurements/database/test/"
 
-# Initialize train dataset
+# Initialize test dataset
 test_dataset = pinn_dataset.DryingDataset(test_dir)
 
 # Initialize model
@@ -115,7 +115,7 @@ plt.plot(time_full.squeeze(1).detach().numpy(), output[:,1].detach().numpy(), co
 #plt.text(x=-0.25, y=0, s=r"RMSE$_T$ = {0:.2f}".format(rmse_t))
 #plt.text(x=-0.25, y=-5.5, s=r"RMSE$_H$ = {0:.2f}".format(rmse_h))
 plt.legend()
-plt.savefig("./output/pinn_graph.png", dpi=300)
+plt.savefig("./output/pinn_graph.pdf")
 plt.show()
 
 # Print RMSE calculated
