@@ -5,9 +5,11 @@ import  pinn_model
 
 import  random
 
-import  numpy               as  np
+import  numpy               as      np
 
-import  matplotlib.pyplot   as  plt
+import  matplotlib.pyplot   as      plt
+
+from    torchsummary        import  summary
 
 # Directory of train dataset
 train_dir = "../measurements/database/train/"
@@ -26,6 +28,10 @@ model = pinn_model.PINN()
 # Set model to train mode
 model.train()
 
+# Print summary of the model
+time, _ = train_dataset[0]
+summary(model, time.shape)
+
 # Optimizer hyperparameters
 learning_rate = 0.01
 # Define optimizer
@@ -34,7 +40,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 # Training hyperparameters
 epochs = 50
 # Physics loss weight
-lambda_data = 1
+lambda_data = 5
 lambda_phys = 1
 lambda_init = 1
 

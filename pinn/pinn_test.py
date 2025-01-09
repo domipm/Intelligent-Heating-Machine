@@ -37,7 +37,7 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 # Training hyperparameters (only fine-tune)
 epochs = 100
 # Physics loss weight
-lambda_data = 15
+lambda_data = 5
 lambda_phys = 1
 lambda_init = 1
 
