@@ -194,7 +194,7 @@ torch.save(model.state_dict(), "./output/fcnn_weights.pt")
 plt.title(r"Training Loss $\mathcal{L}$")
 plt.plot(range(epochs), loss_t, label=r"$\mathcal{L}$")
 plt.legend()
-plt.savefig("./output/pinn_trainloss.png", dpi=300)
+plt.savefig("./output/fcnn_trainloss.pdf")
 plt.show()
 
 
@@ -291,16 +291,13 @@ plt.plot(time_full.squeeze(1).detach().numpy(), output[:,1].detach().numpy(), co
 #plt.text(x=-0.25, y=0, s=r"RMSE$_T$ = {0:.2f}".format(rmse_t))
 #plt.text(x=-0.25, y=-5.5, s=r"RMSE$_H$ = {0:.2f}".format(rmse_h))
 plt.legend()
-plt.savefig("./output/pinn_graph.pdf")
+plt.savefig("./output/fcnn_graph.pdf")
 plt.show()
 
 # Print RMSE calculated
 print("\nRMSE (T) = ", (rmse_t).item(), "%")
 print("\nRMSE (H) = ", (rmse_h).item(), "%")
 print()
-
-# Combined, average loss
-loss_avg = 0
 
 # Average RMSE
 rmse_t_avg = 0
@@ -317,8 +314,6 @@ for k, (time, vals) in enumerate(test_dataset):
 
     # Train all dataset over multiple epochs
     for epoch in range(epochs):
-
-        print("Computing average loss. File {} Epoch {}".format(k, epoch), end="\r")
 
         # Reset gradients
         optimizer.zero_grad()
@@ -341,16 +336,11 @@ for k, (time, vals) in enumerate(test_dataset):
 
         output = model(time_full)
 
-    # Compute final loss
-    loss_avg += torch.mean((output - vals)**2)
-
     # Compute RMSE
     rmse_t_avg += rmse(output.detach().numpy()[:,0], vals.detach().numpy()[:,0])
     rmse_h_avg += rmse(output.detach().numpy()[:,1], vals.detach().numpy()[:,1])
 
-# Print average loss obtained
 print()
-print("\nAverage test loss = ", (loss_avg / len(test_dataset)).item())
 # Print average RMSE obtained
 print("\nAverage RMSE (T) = ", (rmse_t_avg / len(test_dataset)).item(), "%")
 print("\nAverage RMSE (H) = ", (rmse_h_avg / len(test_dataset)).item(), "%")
