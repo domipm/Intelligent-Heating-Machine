@@ -21,7 +21,7 @@ import torch
 import torch.nn as nn
 
 # Directories where data is
-fdir = "./sample_data/database/"
+fdir = "../sample_data/database/train/"
 files = np.sort(os.listdir(fdir))
 
 # Empty numpy array to store humidity values
