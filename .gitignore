@@ -173,3 +173,6 @@ Icon?
 
 # PyTorch model weights
 *.pt
+
+# Testing folder
+/test

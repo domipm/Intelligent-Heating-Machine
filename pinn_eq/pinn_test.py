@@ -13,7 +13,7 @@ def rmse(pred, vals):
     for i in range(len(pred)):
         err += (pred[i] - vals[i])**2
     err /= len(pred)
-    err = np.sqrt(err)
+    #err = np.sqrt(err)
     return err
 
 # Error (%)
@@ -45,11 +45,11 @@ learning_rate = 0.001
 optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 
 # Training hyperparameters (only fine-tune)
-epochs = 100
+epochs = 5
 # Physics loss weight
-lambda_data = 1
+lambda_data = 10
 lambda_phys = 1
-lambda_init = 1
+lambda_init = 0.25
 
 # Choose one file to fine-tune and evaluate
 index = np.random.randint(0, len(test_dataset))
@@ -79,16 +79,16 @@ for epoch in range(epochs):
     dT = torch.autograd.grad(output[:,0], time, torch.ones_like(output[:,0]), create_graph=True)[0]
     dH = torch.autograd.grad(output[:,1], time, torch.ones_like(output[:,1]), create_graph=True)[0]
     # Residual of differential equations
-    rest = (dT - model.talpha + model.tbeta * output[:,0] + model.tgamma *  time )
-    resh = (dH - model.halpha + model.hbeta * output[:,1] + model.hgamma *  time )
+    res_T = (dT + model.alpha_T + model.alpha_T_T * output[:,0] + model.alpha_T_dH * dH)
+    res_H = (dH + model.alpha_H + model.alpha_H_H * output[:,1])
     # Compute physics loss
-    loss_phys = torch.mean(rest**2) + torch.mean(resh**2)
+    loss_phys = torch.mean(res_T**2) + torch.mean(res_H**2)
 
     # Initial conditions
     T0 = vals[0,0]
     H0 = vals[0,1]
     # Initial condition loss
-    loss_init = torch.mean((output[0,0] - T0)**2) + torch.mean((output[0,1] - H0)**2)
+    loss_init = torch.mean((output[0,0] - T0)**2 + (output[0,1] - H0)**2)
 
     # Compute joint loss
     loss = lambda_data * loss_data + lambda_phys * loss_phys + lambda_init * loss_init
@@ -128,11 +128,9 @@ plt.plot(time_full.squeeze(1).detach().numpy(), output[:,0].detach().numpy(), co
 plt.plot(time_full.squeeze(1).detach().numpy(), output[:,1].detach().numpy(), color="red", label="Humidity")
 #plt.text(x=-0.25, y=0, s=r"RMSE$_T$ = {0:.2f}".format(rmse_t))
 #plt.text(x=-0.25, y=-5.5, s=r"RMSE$_H$ = {0:.2f}".format(rmse_h))
-plt.plot(time_full.detach().numpy(), err_t, color="blue", linestyle="-.", alpha=0.5)
-plt.plot(time_full.detach().numpy(), err_h, color="red", linestyle="-.", alpha=0.5)
 plt.legend()
 plt.xlabel(r"Time ($t$)")
-plt.savefig("./output/pinn_graph.pdf")
+#plt.savefig("./output/pinn_graph.pdf")
 plt.show()
 
 # Print RMSE calculated
@@ -143,8 +141,7 @@ print("RMSE (H) = ", (rmse_h).item())
 print("\nError (T) = ", err_t_avg, " %")
 print("Error (H) = ", err_h_avg, " %\n")
 
-# Combined, average loss
-loss_avg = 0
+exit()
 
 # Average RMSE
 rmse_t_avg = 0
@@ -203,16 +200,10 @@ for k, (time, vals) in enumerate(test_dataset):
 
         output = model(time_full)
 
-    # Compute final loss
-    loss_avg += torch.mean((output - vals)**2)
-
     # Compute RMSE
     rmse_t_avg += rmse(output.detach().numpy()[:,0], vals.detach().numpy()[:,0])
     rmse_h_avg += rmse(output.detach().numpy()[:,1], vals.detach().numpy()[:,1])
 
-# Print average loss obtained
-print()
-print("\nAverage test loss = ", (loss_avg / len(test_dataset)).item())
 # Print average RMSE obtained
 print("\nAverage RMSE (T) = ", (rmse_t_avg / len(test_dataset)).item(), "%")
 print("\nAverage RMSE (H) = ", (rmse_h_avg / len(test_dataset)).item(), "%")

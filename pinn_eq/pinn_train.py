@@ -16,7 +16,6 @@ train_dir = "../measurements/database/train/"
 
 # Initialize train dataset
 train_dataset = pinn_dataset.DryingDataset(train_dir)
-# train_dataloader = torch.utils.data.DataLoader(dataset=train_dataset, batch_size=1, shuffle=True)
 
 # Obtain array of all files
 dataset = []
@@ -40,9 +39,9 @@ optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
 # Training hyperparameters
 epochs = 50
 # Physics loss weight
-lambda_data = 1
+lambda_data = 10
 lambda_phys = 1
-lambda_init = 1
+lambda_init = 0.25
 
 # Cumulative train loss
 loss_t = np.empty(shape=(epochs, 4), dtype=object)
@@ -64,21 +63,21 @@ for epoch in range(epochs):
 
         # Compute data loss
         loss_data = torch.mean((output - vals)**2)
-        
+
         # Compute first derivative temperature dT/dt
         dT = torch.autograd.grad(output[:,0], time, torch.ones_like(output[:,0]), create_graph=True)[0]
         dH = torch.autograd.grad(output[:,1], time, torch.ones_like(output[:,1]), create_graph=True)[0]
         # Residual of differential equations
-        rest = (dT - model.talpha + model.tbeta * output[:,0] + model.tgamma *  time * output[:,0] )
-        resh = (dH - model.halpha + model.hbeta * output[:,1] + model.hgamma *  time )
+        res_T = (dT + model.alpha_T + model.alpha_T_T * output[:,0] + model.alpha_T_dH * dH)
+        res_H = (dH + model.alpha_H + model.alpha_H_H * output[:,1])
         # Compute physics loss
-        loss_phys = torch.mean(rest**2) + torch.mean(resh**2)
+        loss_phys = torch.mean(res_T**2) + torch.mean(res_H**2)
 
         # Initial conditions
         T0 = vals[0,0]
         H0 = vals[0,1]
         # Initial condition loss
-        loss_init = torch.mean((output[0,0] - T0)**2) + torch.mean((output[0,1] - H0)**2)
+        loss_init = (output[0,0] - T0)**2 + (output[0,1] - H0)**2
 
         # Compute joint loss
         loss = lambda_data * loss_data + lambda_phys * loss_phys + lambda_init * loss_init       
@@ -97,6 +96,9 @@ for epoch in range(epochs):
 
 # Save model weights
 torch.save(model.state_dict(), "./output/pinn_weights.pt")
+
+print("dT = {} + {}*T + {}*H + {}*t + {}*dH".format(model.alpha_T.item(), model.alpha_T_T.item(), model.alpha_T_H.item(), model.alpha_T_t.item(), model.alpha_T_dH.item()))
+print("dH = {} + {}*T + {}*H + {}*t + {}*dH".format(model.alpha_H.item(), model.alpha_H_T.item(), model.alpha_H_H.item(), model.alpha_H_t.item(), model.alpha_H_dT.item()))
 
 # Plot evolution of all loss terms over time
 plt.title(r"Training Loss $\mathcal{L}$")
