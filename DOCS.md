@@ -6,9 +6,9 @@ The file structure of this repository is as follows:
 
     ./Intelligent-Heating-Machine/
     ├ measurements/ -- Excluded from GitHub, includes all measurement data
-      ├ data/           -- Raw data (*.json)
-      ├ database/       -- Pre-processed data (*.csv)
-      └ graphs/         -- Visualization graphs (*.png)
+      ├ data/                -- Raw data (*.json)
+      ├ database/            -- Pre-processed data (*.csv)
+      └ graphs/              -- Visualization graphs (*.png)
     ├ sample_data/  -- Small sample of data, with some visualization scripts
         ├ data/              -- Raw data (*.json)
         ├ database/          -- Pre-processed data (*.csv)
@@ -17,19 +17,20 @@ The file structure of this repository is as follows:
         ├ graph_sg.py        -- Applies Savitzky-Golay filter to data, graphs
         ├ graph.py           -- Generates graphs of all data (for filtering purposes)
         └ graph_filter.py    -- Applies the pre-processing used in the main PINN model, graphs
-    ├ pinn/  -- Main code used for Physics-Informed Neural Network (PINN)
-        ├ output/         -- Output graphs (*.pdf) and model weights (*.pt)
-        ├ pinn_dataset.py -- Dataset class to load and pre-process files to feed the network
-        ├ pinn_model.py   -- Network model class that defines the architecture and learnable parameters
-        ├ pinn_train.py   -- Training script for model
-        └ pinn_test.py    -- Testing script for verifying model
-    ├ fcnn/ -- Comparison with standard, Fully-Connected Neural Network (FCNN)
-        ├ output/         -- Output graphs (*.pdf) and model weights (*.pt)
-        └ model_nn.py     -- FCNN model implementation
-    ├ data_pre.py -- Used for pre-processing measured data files (*.json) and filter them into files (*.csv)  
+    ├ pinn/          -- Main code used for Physics-Informed Neural Network (PINN)
+        ├ output/            -- Output graphs (*.pdf) and model weights (*.pt)
+        ├ pinn_dataset.py    -- Dataset class to load and pre-process files to feed the network
+        ├ pinn_model.py      -- Network model class that defines the architecture and learnable parameters
+        ├ pinn_train.py      -- Training script for model
+        └ pinn_test.py       -- Testing script for verifying model
+    ├ fcnn/          -- Fully-Connected Neural Network (FCNN) implementation (testing)
+        ├ output/            -- Output graphs (*.pdf) and model weights (*.pt)
+        └ model_nn.py        -- FCNN model implementation
+    ├ pinn_eq/       -- PINN differential equation finding scripts (testing, same folder structure as PINN)
+    ├ data_pre.py    -- Used for pre-processing measured data files (*.json) and filter them into files (*.csv)  
     ├ README.md 
     ├ DOCS.md
-    ├ model.ipynb -- (Old) file describing some theoretical aspects of the project
+    ├ model.ipynb    -- (Old) file describing some theoretical aspects of the project
     └ .gitignore
 
 The folder `sample_data` contains a small subset of the total data available in `measurements` and was used mainly in the first development period to test the code, however the structure of both folders is the same. Inside, there all folders that separate the data into `all` files as well as `train` and `test` splits. The scripts `graph*.py` are also mainly used for visualization purposes of the data and how the Savitzky-Golay and Exponential filtering affect it.
