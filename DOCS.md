@@ -1,37 +1,40 @@
 # Code Documentation
 
-This file is to be used as documentation for the code base developed for this project. The aim is to describe in detail what each script does and how each of its components work. 
+This documentation file aims to describe in detail what each script that has been developed for this project does, and how each of its components work.
 
 The file structure of this repository is as follows:
 
     ./Intelligent-Heating-Machine/
-    ├ diagram/      -- Diagram of drying machine
     ├ measurements/ -- Excluded from GitHub, includes all measurement data
       ├ data/           -- Raw data (*.json)
       ├ database/       -- Pre-processed data (*.csv)
       └ graphs/         -- Visualization graphs (*.png)
-    ├ sample_data/  -- Small sample of data. Scripts used for visualization purposes.
+    ├ sample_data/  -- Small sample of data, with some visualization scripts
         ├ data/              -- Raw data (*.json)
         ├ database/          -- Pre-processed data (*.csv)
-        ├ graphs/            -- Visualization graphs (*.png)
-        ├ graph_expsmooth.py -- Applies Exponential Smoothing filter to data and generates graph
-        ├ graph_sg.py        -- Applies Savitzky-Golay filter to data and generates graph
+        ├ graphs/            -- Visualization graphs (*.pdf / *.png)
+        ├ graph_expsmooth.py -- Applies Exponential Smoothing filter to data, graphs
+        ├ graph_sg.py        -- Applies Savitzky-Golay filter to data, graphs
         ├ graph.py           -- Generates graphs of all data (for filtering purposes)
-    ├ pinn/  -- Code used for Physics-Informed Neural Network (PINN)
-        ├ output/         -- Output graphs (*.png) and model weights (*.pt)
-        ├ pinn_dataset.py -- Dataset class for (*.csv) files to feed the network
+        └ graph_filter.py    -- Applies the pre-processing used in the main PINN model, graphs
+    ├ pinn/  -- Main code used for Physics-Informed Neural Network (PINN)
+        ├ output/         -- Output graphs (*.pdf) and model weights (*.pt)
+        ├ pinn_dataset.py -- Dataset class to load and pre-process files to feed the network
         ├ pinn_model.py   -- Network model class that defines the architecture and learnable parameters
         ├ pinn_train.py   -- Training script for model
         └ pinn_test.py    -- Testing script for verifying model
-    ├ simple_net/ -- Used for comparison with standard neural network model (Some testing scripts)
-    ├ data_pre.py -- Used for pre-processing measured data  
+    ├ fcnn/ -- Comparison with standard, Fully-Connected Neural Network (FCNN)
+        ├ output/         -- Output graphs (*.pdf) and model weights (*.pt)
+        └ model_nn.py     -- FCNN model implementation
+    ├ data_pre.py -- Used for pre-processing measured data files (*.json) and filter them into files (*.csv)  
     ├ README.md 
     ├ DOCS.md
+    ├ model.ipynb -- (Old) file describing some theoretical aspects of the project
     └ .gitignore
 
 The folder `sample_data` contains a small subset of the total data available in `measurements` and was used mainly in the first development period to test the code, however the structure of both folders is the same. Inside, there all folders that separate the data into `all` files as well as `train` and `test` splits. The scripts `graph*.py` are also mainly used for visualization purposes of the data and how the Savitzky-Golay and Exponential filtering affect it.
 
-The folder `simple_net` was also mainly used for testing new approaches in the development of the neural network, and contains some prototyping code. The main code, however, is located in the `pinn` folder, where the final implementation. The following is a step-by-step description of the workflow for this project.
+The folder `fcnn` was also mainly used for testing new approaches in the development of the neural network, and contains some prototyping code. The main code, however, is located in the `pinn` folder, where the final implementation. The following is a step-by-step description of the workflow for this project.
 
 ### Data Pre-Processing
 
