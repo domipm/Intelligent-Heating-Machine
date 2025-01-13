@@ -20,9 +20,7 @@ def rmse(pred, vals):
 def error(pred, vals):
     err = []
     for i in range(len(pred)):
-        print(pred[i], vals[i])
         err.append( abs(pred[i] - vals[i]) / vals[i] * 100 )
-        print(err[i])
     err_avg = np.mean(err)
     return err, err_avg
 
@@ -109,6 +107,9 @@ with torch.no_grad():
 
     output = model(time_full)
 
+# Plot learnt parameters for equations
+print(model.talpha.item(), model.tbeta.item(), model.tgamma.item(), model.tdelta.item(), model.halpha.item(), model.hbeta.item(), model.hgamma.item())
+
 # Compute Root Mean Squared Error (RMSE)
 out_t = output.detach().numpy()[:,0]
 out_h = output.detach().numpy()[:,1]
@@ -128,11 +129,28 @@ plt.plot(time_full.squeeze(1).detach().numpy(), output[:,0].detach().numpy(), co
 plt.plot(time_full.squeeze(1).detach().numpy(), output[:,1].detach().numpy(), color="red", label="Humidity")
 #plt.text(x=-0.25, y=0, s=r"RMSE$_T$ = {0:.2f}".format(rmse_t))
 #plt.text(x=-0.25, y=-5.5, s=r"RMSE$_H$ = {0:.2f}".format(rmse_h))
-plt.plot(time_full.detach().numpy(), err_t, color="blue", linestyle="-.", alpha=0.5)
-plt.plot(time_full.detach().numpy(), err_h, color="red", linestyle="-.", alpha=0.5)
+#plt.plot(time_full.detach().numpy(), err_t, color="blue", linestyle="-.", alpha=0.5)
+#plt.plot(time_full.detach().numpy(), err_h, color="red", linestyle="-.", alpha=0.5)
 plt.legend()
 plt.xlabel(r"Time ($t$)")
 plt.savefig("./output/pinn_graph.pdf")
+plt.show()
+
+plt.title("Relative Error Drying Process PINN Drying Batch {}".format(index))
+# Real data
+#plt.plot(time_full.detach().numpy(), vals_full[:,0].detach().numpy(), color="blue", linestyle="--")
+#plt.plot(time_full.detach().numpy(), vals_full[:,1].detach().numpy(), color="red", linestyle="--")
+# Outputs
+#plt.plot(time_full.squeeze(1).detach().numpy(), output[:,0].detach().numpy(), color="blue", label="Temperature")
+#plt.plot(time_full.squeeze(1).detach().numpy(), output[:,1].detach().numpy(), color="red", label="Humidity")
+#plt.text(x=-0.25, y=15, s=r"RMSE$_T$ = {0:.2f}".format(rmse_t))
+#plt.text(x=-0.25, y=0, s=r"RMSE$_H$ = {0:.2f}".format(rmse_h))
+plt.plot(time_full.detach().numpy(), err_t, color="blue", linestyle="-.", alpha=1, label="Temperature")
+plt.plot(time_full.detach().numpy(), err_h, color="red", linestyle="-.", alpha=1, label="Humidity")
+plt.legend()
+plt.ylabel(r"Relative Error [%]")
+plt.xlabel(r"Time ($t$)")
+plt.savefig("./output/pinn_error.pdf")
 plt.show()
 
 # Print RMSE calculated
@@ -143,12 +161,13 @@ print("RMSE (H) = ", (rmse_h).item())
 print("\nError (T) = ", err_t_avg, " %")
 print("Error (H) = ", err_h_avg, " %\n")
 
-# Combined, average loss
-loss_avg = 0
-
 # Average RMSE
 rmse_t_avg = 0
 rmse_h_avg = 0
+
+# Average RE
+re_t_avg = 0
+re_h_avg = 0
 
 # Go over all files and evaluate, calculating the observed loss
 for k, (time, vals) in enumerate(test_dataset):
@@ -203,17 +222,21 @@ for k, (time, vals) in enumerate(test_dataset):
 
         output = model(time_full)
 
-    # Compute final loss
-    loss_avg += torch.mean((output - vals)**2)
-
     # Compute RMSE
     rmse_t_avg += rmse(output.detach().numpy()[:,0], vals.detach().numpy()[:,0])
     rmse_h_avg += rmse(output.detach().numpy()[:,1], vals.detach().numpy()[:,1])
 
-# Print average loss obtained
-print()
-print("\nAverage test loss = ", (loss_avg / len(test_dataset)).item())
+    # Compute error
+    err_t, err_t_avg = error(output.detach().numpy()[:,0], vals_full.detach().numpy()[:,0])
+    err_h, err_h_avg = error(output.detach().numpy()[:,1], vals_full.detach().numpy()[:,1])
+
+    re_t_avg += err_t_avg
+    re_h_avg += err_h_avg
+
 # Print average RMSE obtained
 print("\nAverage RMSE (T) = ", (rmse_t_avg / len(test_dataset)).item(), "%")
-print("\nAverage RMSE (H) = ", (rmse_h_avg / len(test_dataset)).item(), "%")
+print("Average RMSE (H) = ", (rmse_h_avg / len(test_dataset)).item(), "%")
 print()
+# Print errors calculated
+print("\nAverage Relative Error (T) = ", re_t_avg/len(test_dataset), " %")
+print("Average Relative Error (H) = ", re_h_avg/len(test_dataset), " %\n")
