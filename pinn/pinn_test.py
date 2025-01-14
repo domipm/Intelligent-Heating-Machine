@@ -16,11 +16,12 @@ def rmse(pred, vals):
     err = np.sqrt(err)
     return err
 
-# Error (%)
+# Error
 def error(pred, vals):
     err = []
     for i in range(len(pred)):
-        err.append( abs(pred[i] - vals[i]) / vals[i] * 100 )
+        err.append( abs(pred[i] - vals[i]) )
+        #err.append( (abs(pred[i] - vals[i]) / vals[i]) * 100 )
     err_avg = np.mean(err)
     return err, err_avg
 
@@ -51,6 +52,8 @@ lambda_init = 1
 
 # Choose one file to fine-tune and evaluate
 index = np.random.randint(0, len(test_dataset))
+time_full, vals_full = test_dataset[index]
+index = 2
 time_full, vals_full = test_dataset[index]
 
 # Use only first few points for fine-tuning
@@ -120,23 +123,24 @@ rmse_h = rmse(out_h, vals_full.detach().numpy()[:,1])
 err_t, err_t_avg = error(out_t, vals_full.detach().numpy()[:,0])
 err_h, err_h_avg = error(out_h, vals_full.detach().numpy()[:,1])
 
-plt.title("Drying Process PINN Drying Batch {}".format(index))
+plt.title("Drying Process PINN Batch {}".format(index))
 # Real data
 plt.plot(time_full.detach().numpy(), vals_full[:,0].detach().numpy(), color="blue", linestyle="--")
 plt.plot(time_full.detach().numpy(), vals_full[:,1].detach().numpy(), color="red", linestyle="--")
 # Outputs
-plt.plot(time_full.squeeze(1).detach().numpy(), output[:,0].detach().numpy(), color="blue", label="Temperature")
-plt.plot(time_full.squeeze(1).detach().numpy(), output[:,1].detach().numpy(), color="red", label="Humidity")
+plt.plot(time_full.squeeze(1).detach().numpy(), output[:,0].detach().numpy(), color="blue", label=r"Temperature [ºC]")
+plt.plot(time_full.squeeze(1).detach().numpy(), output[:,1].detach().numpy(), color="red", label="Humidity [%]")
 #plt.text(x=-0.25, y=0, s=r"RMSE$_T$ = {0:.2f}".format(rmse_t))
 #plt.text(x=-0.25, y=-5.5, s=r"RMSE$_H$ = {0:.2f}".format(rmse_h))
 #plt.plot(time_full.detach().numpy(), err_t, color="blue", linestyle="-.", alpha=0.5)
 #plt.plot(time_full.detach().numpy(), err_h, color="red", linestyle="-.", alpha=0.5)
 plt.legend()
-plt.xlabel(r"Time ($t$)")
+plt.ylabel(r"Sensor Values")
+plt.xlabel(r"Time ($t$) [min]")
 plt.savefig("./output/pinn_graph.pdf")
 plt.show()
 
-plt.title("Relative Error Drying Process PINN Drying Batch {}".format(index))
+plt.title("Absolute Error (AE) Drying Process PINN Batch {}".format(index))
 # Real data
 #plt.plot(time_full.detach().numpy(), vals_full[:,0].detach().numpy(), color="blue", linestyle="--")
 #plt.plot(time_full.detach().numpy(), vals_full[:,1].detach().numpy(), color="red", linestyle="--")
@@ -145,11 +149,11 @@ plt.title("Relative Error Drying Process PINN Drying Batch {}".format(index))
 #plt.plot(time_full.squeeze(1).detach().numpy(), output[:,1].detach().numpy(), color="red", label="Humidity")
 #plt.text(x=-0.25, y=15, s=r"RMSE$_T$ = {0:.2f}".format(rmse_t))
 #plt.text(x=-0.25, y=0, s=r"RMSE$_H$ = {0:.2f}".format(rmse_h))
-plt.plot(time_full.detach().numpy(), err_t, color="blue", linestyle="-.", alpha=1, label="Temperature")
-plt.plot(time_full.detach().numpy(), err_h, color="red", linestyle="-.", alpha=1, label="Humidity")
+plt.plot(time_full.detach().numpy(), err_t, color="blue", linestyle="-.", alpha=1, label=r"Temperature [ºC]")
+plt.plot(time_full.detach().numpy(), err_h, color="red", linestyle="-.", alpha=1, label="Humidity [%]")
 plt.legend()
-plt.ylabel(r"Relative Error [%]")
-plt.xlabel(r"Time ($t$)")
+plt.ylabel(r"Absolute Error")
+plt.xlabel(r"Time ($t$) [min]")
 plt.savefig("./output/pinn_error.pdf")
 plt.show()
 
@@ -158,8 +162,8 @@ print("\nRMSE (T) = ", (rmse_t).item())
 print("RMSE (H) = ", (rmse_h).item())
 
 # Print errors calculated
-print("\nError (T) = ", err_t_avg, " %")
-print("Error (H) = ", err_h_avg, " %\n")
+print("\nError (T) = ", err_t_avg)
+print("Error (H) = ", err_h_avg, "\n")
 
 # Average RMSE
 rmse_t_avg = 0
@@ -234,9 +238,9 @@ for k, (time, vals) in enumerate(test_dataset):
     re_h_avg += err_h_avg
 
 # Print average RMSE obtained
-print("\nAverage RMSE (T) = ", (rmse_t_avg / len(test_dataset)).item(), "%")
+print("\n\nAverage RMSE (T) = ", (rmse_t_avg / len(test_dataset)).item(), "%")
 print("Average RMSE (H) = ", (rmse_h_avg / len(test_dataset)).item(), "%")
 print()
 # Print errors calculated
-print("\nAverage Relative Error (T) = ", re_t_avg/len(test_dataset), " %")
-print("Average Relative Error (H) = ", re_h_avg/len(test_dataset), " %\n")
+print("\nAverage Absolute Error (T) = ", re_t_avg/len(test_dataset))
+print("Average Absolute Error (H) = ", re_h_avg/len(test_dataset), "\n")
